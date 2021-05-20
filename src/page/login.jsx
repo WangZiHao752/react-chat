@@ -1,15 +1,32 @@
 import React,{useState} from "react";
-import { Form, Input, Button } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Form, Input, Button,Upload,} from 'antd';
+import { UserOutlined, LockOutlined ,UploadOutlined} from '@ant-design/icons';
 import store from "../store"
+const normFile = (e) => {
+  // console.log('Upload event:', e);
+
+  if (Array.isArray(e)) {
+    return e;
+  }
+
+  return e && e.fileList;
+};
+
+
 const NormalLoginForm = (props) => {
   const [loading,setLoading] = useState(false);
+  //提交事件
   const onFinish = (values) => {
+    // console.log(values);
+    const avatar1 = values.avatar1[0].thumbUrl;
     setLoading(true);
     const timer = setTimeout(()=>{
       store.dispatch({
         type:"USERINFO",
-        payload:values
+        payload:{
+          ...values,
+          avatar1
+        }
       })
       clearTimeout(timer)
       props.history.push("/home")
@@ -26,6 +43,21 @@ const NormalLoginForm = (props) => {
       }}
       onFinish={onFinish}
     >
+      <Form.Item
+        name="avatar1"
+        rules={[
+          {
+            required: true,
+            message: '请上传头像',
+          },
+        ]}
+        valuePropName="fileList"
+        getValueFromEvent={normFile}
+      >
+        <Upload name="logo" listType="picture">
+          <Button icon={<UploadOutlined />}>点击上传头像</Button>
+        </Upload>
+      </Form.Item>
       <Form.Item
         name="username"
         rules={[
@@ -52,6 +84,7 @@ const NormalLoginForm = (props) => {
           placeholder="房间号"
         />
       </Form.Item>
+      
       <Form.Item>
         <Button type="primary" htmlType="submit" className="login-form-button" loading={loading} >
           登陆

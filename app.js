@@ -57,10 +57,9 @@ io.on('connection', function (socket) {
   //聊天信息
   socket.on('chat',function(data){
     const { msg} = data;
-    console.log(data);
     io.sockets.emit('getMessage',{
       id,
-      msg
+      ...msg
     })
   })
 });
@@ -71,7 +70,7 @@ io.on('connect',(socket)=>{
   userList.push(id);
   console.log(id+'成功连接当前在线人数'+userList.length);
 
-  socket.emit('open', { 
+  socket.emit('open', {
     statu: '连接成功',
     uuid:id,
     currentAlive:userList.length,

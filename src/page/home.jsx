@@ -3,6 +3,7 @@ import { Comment, Avatar, Form, Button, List, Input } from 'antd';
 import moment from 'moment';
 import {connect} from "react-redux";
 
+import MyHeader from "./TabBar/header";
 
 
 const { TextArea } = Input;
@@ -45,13 +46,15 @@ class App extends Component {
 
     this.setState({
       submitting: true,
+      value:""
     });
 
     //发送数据;
     socket.emit('chat',{ 
       msg:{
           username:this.props.userInfo.username,
-          avatar: 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png',
+          // avatar: 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png',
+          avatar1:this.props.userInfo.avatar1,
           value: this.state.value,
           datetime: moment().format('YYYY-MM-DD:HH:MM:SS'),
         },
@@ -106,15 +109,15 @@ class App extends Component {
     //聊天信息
     socket.on('getMessage',(data)=>{
       console.log(data);
-      const {msg:{avatar,datetime,username,value}} = data;
+      const {avatar1,datetime,username,value} = data;
       this.setState({
         submitting: false,
-        value: '',
+        
         comments: [
           ...this.state.comments,
           {
               username:username,
-              avatar: avatar,
+              avatar: avatar1,
               content: <p>{value}</p>,
               datetime: username+' '+datetime,
           },
@@ -125,15 +128,14 @@ class App extends Component {
   }
   render() {
 
-    const {userInfo:{username},currentAlive} = this.props;
+    const {userInfo:{username,avatar1},currentAlive} = this.props;
     const { comments, submitting, value } = this.state;
-    const { comments1} = this.props;
     return (
         <div className="home-container">
             <div className="home-header">
-                <p>用户名: <b>{username}</b></p><p>在线人数:<b >{currentAlive}</b></p>
+               <MyHeader username={username} currentAlive={currentAlive} ></MyHeader>
             </div>
-            <div className="home-main">
+            <div className="home-main" onScroll={(e)=>{console.log(e);}}>
             {/* {comments.length > 0 && <CommentList comments={comments} />} */}
               <CommentList comments={comments.length?comments:[]}></CommentList>
             </div>
@@ -141,7 +143,7 @@ class App extends Component {
                 <Comment
                     avatar={
                         <Avatar
-                          src="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png"
+                          src={avatar1}
                           alt="Han Solo"
                         />
                     }
