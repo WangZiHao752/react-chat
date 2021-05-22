@@ -54,7 +54,7 @@ const NormalLoginForm = (props) => {
         valuePropName="fileList"
         getValueFromEvent={normFile}
       >
-        <Upload name="logo" listType="picture">
+        <Upload name="logo" action="#" listType="picture">
           <Button icon={<UploadOutlined />}>点击上传头像</Button>
         </Upload>
       </Form.Item>

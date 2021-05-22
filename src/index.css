@@ -15,7 +15,12 @@ code {
     monospace;
 }
 
-
+*{
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  box-sizing: border-box;
+}
 .login-form-button{
   width: 100%;
 }
@@ -32,7 +37,7 @@ code {
   height: 45px;
   display: flex;
   justify-content: space-around;
-  line-height: 45px;
+  align-items: center;
   text-align: center;
   box-shadow: 0px -30px 32px 10px #000;
 }

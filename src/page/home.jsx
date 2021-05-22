@@ -1,26 +1,25 @@
 import React ,{Component}from "react";
-import { Comment, Avatar, Form, Button, List, Input } from 'antd';
+import { Comment, Avatar, Form, Button, List, Input,message } from 'antd';
 import moment from 'moment';
 import {connect} from "react-redux";
-
+import {debounce} from "../utils"
 import MyHeader from "./TabBar/header";
-
+// import {debounce} from "lodash-es"; //防抖
 
 const { TextArea } = Input;
 
 const CommentList = ({ comments }) => (
   <List
     dataSource={comments}
-    
     itemLayout="horizontal"
     renderItem={props => <Comment {...props} />}
   />
 );
 
-const Editor = ({ onChange, onSubmit, submitting, value }) => (
+const Editor = ({ onChange, onSubmit,onBlur,onFocus, submitting, value }) => (
   <>
     <Form.Item>
-      <TextArea rows={4} onChange={onChange} value={value} />
+      <TextArea rows={4} onChange={onChange} value={value} onBlur={onBlur} onFocus={onFocus}/>
     </Form.Item>
     <Form.Item>
       <Button htmlType="submit" loading={submitting} onClick={onSubmit} type="primary">
@@ -36,18 +35,18 @@ class App extends Component {
     submitting: false,
     value: '',
     socket:require('socket.io-client')('http://localhost:8080')
-  };
-
-  handleSubmit = () => {
+  }
+  _focus=false  //聚焦
+  _change=false   //输入
+  inputting=false //是否正在输入
+  //提交  
+  handleSubmit = (e) => {
+    
+    console.log(this.state.value);
     const {socket } = this.state;
     if (!this.state.value) {
       return;
     }
-
-    this.setState({
-      submitting: true,
-      value:""
-    });
 
     //发送数据;
     socket.emit('chat',{ 
@@ -60,34 +59,63 @@ class App extends Component {
         },
     });
 
-    // setTimeout(() => {
-    //   this.setState({
-    //     submitting: false,
-    //     value: '',
-    //     comments: [
-    //       ...this.state.comments,
-    //       {
-    //           username:this.props.userInfo.username,
-    //           avatar: 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png',
-    //           content: <p>{this.state.value}</p>,
-    //           datetime: moment().fromNow(),
-    //       },
-    //     ],
-    //   });
-    //   console.log(this.state.comments);
+    this.setState({
+      submitting: true,
+      value:""
+    });
 
-    // }, 1000);
+  };
+  info = (val) => {
+    message.info(val+'进入了聊天室');
   };
   //content: <p>{this.state.value}</p>,
-  handleChange = e => {
-    this.setState({
-      value: e.target.value,
-    });
-  };
+  handleFocus=()=>{
+    this._focus = true;
+    console.log('聚焦');
+  }
+  handleBlur=()=>{
+    this._focus=false;
+    console.log('失焦');
+  }
+  //用户输入事件  
+   handleChange =(e)=>{
+      this.setState({
+        value: e.target.value,
+      });
+      if(!this._change){
+        this._change=true;
+        if(!this.inputting){
+          //首次输入才会触发
+          this.inputting = true;
+          /* 此处写正在输入的逻辑 */
+          this.state.socket.emit('userInputting',{
+            username:this.props.userInfo.username,
+          })
+        }
+      }
+      
+      debounce(()=>{  //防抖  触发输入结束事件
+        this.iptStopChange(e)
+      },500)
+   } 
+
+   //输入结束
+   iptStopChange = ()=>{
+    this._change=false;
+    this.inputting = false;
+    /*此处写输入结束的逻辑 */
+    this.state.socket.emit('userEndInput',{
+      username:this.props.userInfo.username,
+    })
+  }
+
+  //滑动事件
+  // homeScroll = debounce((e)=>{
+  //   console.log(e);
+  // },500)
+
   componentDidMount(){
-    
-    // const socket = require('socket.io-client')('http://localhost:8080');
-    
+       
     const {socket} = this.state;
     //连接成功
     socket.on('open', data=> {
@@ -95,6 +123,9 @@ class App extends Component {
       this.props.dispatch({
         type:"CHANGE_CURRENTALIVE",
         payload:data.currentAlive
+      })
+      socket.emit('toastUser',{ //发送上线消息
+        username:this.props.userInfo.username,
       })
     });
     //更新在线总人数
@@ -105,7 +136,11 @@ class App extends Component {
         payload:data.currentAlive
       })
     });
-
+    socket.on('toastUser',(data)=>{
+      console.log(data);
+      this.info(data.data.username)
+      //通知所有人上线
+    })
     //聊天信息
     socket.on('getMessage',(data)=>{
       console.log(data);
@@ -118,24 +153,45 @@ class App extends Component {
           {
               username:username,
               avatar: avatar1,
-              content: <p>{value}</p>,
+              content: <p color="green">{value}</p>,
               datetime: username+' '+datetime,
           },
         ],
       });
     })
+    
+    //结束输入事件
+    socket.on('userEndInput',(data)=>{
+      const { userInputtingList} = data;
+      console.log('正在输入的用户'+userInputtingList);
+      this.props.dispatch({
+        type:"USER_INPUTTING_LIST",
+        payload:userInputtingList
+      })
+      
+    })
+
+    //输入事件
+    socket.on('userInputting',(data)=>{
+      const { userInputtingList} = data;
+      console.log('正在输入的用户'+userInputtingList);
+      this.props.dispatch({
+        type:"USER_INPUTTING_LIST",
+        payload:userInputtingList
+      })
+    })
 
   }
   render() {
 
-    const {userInfo:{username,avatar1},currentAlive} = this.props;
+    const {userInfo:{username,avatar1},currentAlive,userInputtingList} = this.props;
     const { comments, submitting, value } = this.state;
     return (
         <div className="home-container">
             <div className="home-header">
-               <MyHeader username={username} currentAlive={currentAlive} ></MyHeader>
+               <MyHeader username={username} currentAlive={currentAlive} userInputtingList={userInputtingList}></MyHeader>
             </div>
-            <div className="home-main" onScroll={(e)=>{console.log(e);}}>
+            <div className="home-main" onScroll={this.homeScroll}>
             {/* {comments.length > 0 && <CommentList comments={comments} />} */}
               <CommentList comments={comments.length?comments:[]}></CommentList>
             </div>
@@ -153,6 +209,8 @@ class App extends Component {
                           onSubmit={this.handleSubmit}
                           submitting={submitting}
                           value={value}
+                          onBlur={this.handleBlur}
+                          onFocus={this.handleFocus}
                         />
                     }
                 />
@@ -166,7 +224,8 @@ const mapStateToProps=(state)=>{
     return{
         userInfo:state.userInfo,  //用户信息
         currentAlive:state.currentAlive, //当前在线人数
-        msgList:state.msgList,
+        msgList:state.msgList, //消息列表
+        userInputtingList:state.userInputtingList, //正在输入用户列表
     }
 }
 export default connect(mapStateToProps)(App);

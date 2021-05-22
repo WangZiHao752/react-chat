@@ -5,6 +5,7 @@ const defaultState={
     },
     currentAlive:0,
     msgList:[],
+    userInputtingList:[], //正在输入的用户列表
 }
 const reducer = (state=defaultState,action)=>{
     const {type , payload } = action;
@@ -26,6 +27,12 @@ const reducer = (state=defaultState,action)=>{
             return{
                 ...state,
                 currentAlive:payload,
+            }
+        }
+        case "USER_INPUTTING_LIST":{
+            return{
+                ...state,
+                userInputtingList:payload,
             }
         }
         default:{
