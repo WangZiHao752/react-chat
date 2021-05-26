@@ -3,6 +3,7 @@ const defaultState={
     userInfo:{
         username:""   
     },
+    userList:[],
     currentAlive:0,
     msgList:[],
     userInputtingList:[], //正在输入的用户列表
@@ -27,6 +28,12 @@ const reducer = (state=defaultState,action)=>{
             return{
                 ...state,
                 currentAlive:payload,
+            }
+        }
+        case "USERLIST":{
+            return{
+                ...state,
+                userList:payload
             }
         }
         case "USER_INPUTTING_LIST":{

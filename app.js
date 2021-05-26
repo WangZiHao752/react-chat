@@ -16,7 +16,13 @@ Array.prototype.remove = function(val) {
     this.splice(index, 1);
   }
 };
-let userList = []; //在线用户列表
+let userList = [
+  // {
+  //   username:"123456",
+  //   id:"asdaffasfasf",
+  //   isInputting:true,
+  // }
+]; //在线用户列表
 let userInputtingList = []; //正在输入的用户列表
 
 server.listen(8080,console.log('http://localhost:8080'));
@@ -33,12 +39,27 @@ io.on('connection', function (socket) {
 
   //断开连接
   socket.on('disconnect', function () {
-    userList.remove(id)
-    console.log(id+'断开了连接当前在线人数'+userList.length);
+    let removeBoj = {};
+    userList.forEach((item,ind)=>{
+      if(item.id==id){
+        removeBoj={
+          remId : ind,
+          username:item.username
+        }
+      }
+    })
+
+    
+    userList.splice(removeBoj.remId,1); //删除该用户
+    
+    console.log(removeBoj.username+'断开了连接当前在线人数'+userList.length);
+    removeBoj={};
+    
 
     //更新总人数
     io.sockets.emit('currentAlive',{
-      currentAlive:userList.length
+      currentAlive:userList.length,
+      userList,
     })
   })
 
@@ -65,30 +86,38 @@ io.on('connection', function (socket) {
 
   //用户正在输入事件
     socket.on('userInputting',function(data){
-      const { username} = data;
 
-      const flag = userInputtingList.find(item=>item===username);
-      if(!flag) userInputtingList.push(username);
+      // const { username} = data;
+      //修改用户输入状态
+      const currentInputt = userList.find(item=>item.id==id);
+      Object.assign(currentInputt,{isInputting:true});
+
       io.sockets.emit('userInputting',{
-        userInputtingList
+        userList
     })
   })
 
   //用户结束输入事件
   socket.on('userEndInput',function(data){
     const { username} = data;
-    userInputtingList.forEach((item,ind)=>{
-      if(item===username) userInputtingList.splice(ind,1); //删除
-    })
-    io.sockets.emit('userEndInput',{
-      userInputtingList
+    const currentInputt = userList.find(item=>item.id==id);
+      Object.assign(currentInputt,{isInputting:false});
+
+      io.sockets.emit('userEndInput',{
+        userList
     })
   })
 
   //通知所有人**上线
   socket.on('toastUser',(data)=>{
+    const {username } = data;
+    //给用户列表添加网名
+    const currentUser = userList.find(item=>item.id==id);
+    Object.assign(currentUser,{username});
+    console.log(username+'成功连接当前在线人数'+userList.length);
     io.sockets.emit('toastUser',{
-      data
+      username, //用户名
+      userList,
     })
   })
 })
@@ -96,9 +125,12 @@ io.on('connection', function (socket) {
 //连接事件
 io.on('connect',(socket)=>{
   const {id} = socket;
-  userList.push(id);
-  console.log(id+'成功连接当前在线人数'+userList.length);
-
+  userList.push({
+    username:'',
+    id,
+    isInputting:false
+  });
+  
   socket.emit('open', {
     statu: '连接成功',
     uuid:id,

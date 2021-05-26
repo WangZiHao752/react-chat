@@ -138,7 +138,12 @@ class App extends Component {
     });
     socket.on('toastUser',(data)=>{
       console.log(data);
-      this.info(data.data.username)
+      const {userList} = data;
+      this.props.dispatch({
+        type:"USERLIST",
+        payload:userList
+      })
+      this.info(data.username)
       //通知所有人上线
     })
     //聊天信息
@@ -162,34 +167,37 @@ class App extends Component {
     
     //结束输入事件
     socket.on('userEndInput',(data)=>{
-      const { userInputtingList} = data;
-      console.log('正在输入的用户'+userInputtingList);
+      const { userList} = data;
+      console.log('正在输入的用户'+userList);
       this.props.dispatch({
-        type:"USER_INPUTTING_LIST",
-        payload:userInputtingList
+        type:"USERLIST",
+        payload:userList
       })
       
     })
 
     //输入事件
     socket.on('userInputting',(data)=>{
-      const { userInputtingList} = data;
-      console.log('正在输入的用户'+userInputtingList);
+      const { userList} = data;
+      console.log('正在输入的用户'+userList);
       this.props.dispatch({
-        type:"USER_INPUTTING_LIST",
-        payload:userInputtingList
+        type:"USERLIST",
+        payload:userList
       })
     })
 
   }
+  componentWillUnmount(){
+    this.state.socket.close()
+  }
   render() {
 
-    const {userInfo:{username,avatar1},currentAlive,userInputtingList} = this.props;
+    const {userInfo:{username,avatar1},currentAlive,userInputtingList,userList} = this.props;
     const { comments, submitting, value } = this.state;
     return (
         <div className="home-container">
             <div className="home-header">
-               <MyHeader username={username} currentAlive={currentAlive} userInputtingList={userInputtingList}></MyHeader>
+               <MyHeader username={username} currentAlive={currentAlive} userList={userList} userInputtingList={userInputtingList}></MyHeader>
             </div>
             <div className="home-main" onScroll={this.homeScroll}>
             {/* {comments.length > 0 && <CommentList comments={comments} />} */}
@@ -223,6 +231,7 @@ class App extends Component {
 const mapStateToProps=(state)=>{
     return{
         userInfo:state.userInfo,  //用户信息
+        userList:state.userList, //在线的用户列表
         currentAlive:state.currentAlive, //当前在线人数
         msgList:state.msgList, //消息列表
         userInputtingList:state.userInputtingList, //正在输入用户列表

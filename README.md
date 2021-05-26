@@ -12,3 +12,19 @@
     npm run serve
 
 
+
+登陆以后 id加网名 绑定 然后保存
+
+```js
+let userList = [ //在线用户列表
+  {
+    username:"123456",
+    avatar1:'',  //头像
+    id:"asdaffasfasf",
+    isInputting:true,
+  }
+]; 
+```
+
+
+### 待完成  退出登陆 更新在线用户列表
