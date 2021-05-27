@@ -4,9 +4,8 @@ const defaultState={
         username:""   
     },
     userList:[],
-    currentAlive:0,
     msgList:[],
-    userInputtingList:[], //正在输入的用户列表
+    userInputtingList:[], //正在输入的用户列表 /*准备删除 */
 }
 const reducer = (state=defaultState,action)=>{
     const {type , payload } = action;
@@ -33,7 +32,7 @@ const reducer = (state=defaultState,action)=>{
         case "USERLIST":{
             return{
                 ...state,
-                userList:payload
+                userList:payload.userList
             }
         }
         case "USER_INPUTTING_LIST":{

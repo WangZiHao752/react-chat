@@ -1,6 +1,8 @@
 let _app = require('express');
 const app = require('express')();
+
 app.use(_app.static('./build'))
+
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 const fs = require('fs');
@@ -32,6 +34,9 @@ app.get('/', function (req, res) {
   res.send(fs.readFileSync('build/index.html','utf8'));
 });
 
+app.post('/login',(req,res)=>{
+  res.send(fs.readFileSync('build/index.html','utf8'));
+})
 
 io.on('connection', function (socket) {
   
@@ -53,14 +58,16 @@ io.on('connection', function (socket) {
     userList.splice(removeBoj.remId,1); //删除该用户
     
     console.log(removeBoj.username+'断开了连接当前在线人数'+userList.length);
-    removeBoj={};
+    
     
 
-    //更新总人数
-    io.sockets.emit('currentAlive',{
-      currentAlive:userList.length,
+    //通知所有人 有人下线了
+    io.sockets.emit('toastUser',{
+      username:removeBoj.username, //用户名
       userList,
+      type:"logout"
     })
+    removeBoj={};
   })
 
 
@@ -114,10 +121,11 @@ io.on('connection', function (socket) {
     //给用户列表添加网名
     const currentUser = userList.find(item=>item.id==id);
     Object.assign(currentUser,{username});
-    console.log(username+'成功连接当前在线人数'+userList.length);
+    console.log(username+'成功连接当前在线人员'+userList.length);
     io.sockets.emit('toastUser',{
       username, //用户名
       userList,
+      type:"login"
     })
   })
 })
@@ -136,8 +144,5 @@ io.on('connect',(socket)=>{
     uuid:id,
     currentAlive:userList.length,
   });
-  //当前在线人数
-  io.sockets.emit('currentAlive',{
-    currentAlive:userList.length
-  })
+
 })

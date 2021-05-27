@@ -32,7 +32,6 @@ const NormalLoginForm = (props) => {
       props.history.push("/home")
     },2000)
   };
-
   return (
     <div className="login-wrapper" style={{maxWidth:"80%",height:"350px",position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}>
     <Form
@@ -54,7 +53,7 @@ const NormalLoginForm = (props) => {
         valuePropName="fileList"
         getValueFromEvent={normFile}
       >
-        <Upload name="logo" action="#" listType="picture">
+        <Upload name="logo" action="#" accept="image/png, image/jpeg"  listType="picture">
           <Button icon={<UploadOutlined />}>点击上传头像</Button>
         </Upload>
       </Form.Item>

@@ -39,6 +39,8 @@ class App extends Component {
   _focus=false  //聚焦
   _change=false   //输入
   inputting=false //是否正在输入
+  currentTop=0; //默认0
+  scrollBox=null; //滑动盒子父级
   //提交  
   handleSubmit = (e) => {
     
@@ -65,8 +67,11 @@ class App extends Component {
     });
 
   };
-  info = (val) => {
+  Toastlogin = (val) => {
     message.info(val+'进入了聊天室');
+  };
+  Toastlogout = (val) => {
+    message.warning(val+'离开了聊天室');
   };
   //content: <p>{this.state.value}</p>,
   handleFocus=()=>{
@@ -110,68 +115,77 @@ class App extends Component {
   }
 
   //滑动事件
-  // homeScroll = debounce((e)=>{
-  //   console.log(e);
-  // },500)
+  homeScroll =(e)=>{
+
+    debounce(()=>{
+      console.log(e);
+      this.currentTop = e.targrt.children[0].scrollTop;
+      console.log(this.currentTop,'currentTop');
+    },500)
+
+  }
+   
 
   componentDidMount(){
        
     const {socket} = this.state;
     //连接成功
     socket.on('open', data=> {
-      console.log(data);
-      this.props.dispatch({
-        type:"CHANGE_CURRENTALIVE",
-        payload:data.currentAlive
-      })
+      console.log('连接成功',data);  
       socket.emit('toastUser',{ //发送上线消息
         username:this.props.userInfo.username,
       })
     });
     //更新在线总人数
     socket.on('currentAlive', data=> {
-      console.log(data);
-      this.props.dispatch({
-        type:"CHANGE_CURRENTALIVE",
-        payload:data.currentAlive
-      })
-    });
-    socket.on('toastUser',(data)=>{
-      console.log(data);
       const {userList} = data;
+      console.log(data);
       this.props.dispatch({
         type:"USERLIST",
-        payload:userList
+        payload:{
+          userList
+        }
       })
-      this.info(data.username)
-      //通知所有人上线
+    });
+    //通知所有人   上线  下线  type:'logout' 'login'
+    socket.on('toastUser',(data)=>{
+      console.log(data);
+      const {userList,type} = data;
+      switch(type){
+        case "logout":
+          this.Toastlogout(data.username); //下线
+          break;
+        case "login":
+          this.Toastlogin(data.username); //上线
+          break;
+        default:break;
+      }
+      this.props.dispatch({
+        type:"USERLIST",
+        payload:{
+          userList
+        }
+      })
+      
+      //上线
     })
     //聊天信息
     socket.on('getMessage',(data)=>{
       console.log(data);
-      const {avatar1,datetime,username,value} = data;
-      this.setState({
-        submitting: false,
-        
-        comments: [
-          ...this.state.comments,
-          {
-              username:username,
-              avatar: avatar1,
-              content: <p color="green">{value}</p>,
-              datetime: username+' '+datetime,
-          },
-        ],
-      });
+      this.getMessage(data); //更新聊天信息  line:202
     })
     
+    
+
     //结束输入事件
     socket.on('userEndInput',(data)=>{
       const { userList} = data;
       console.log('正在输入的用户'+userList);
       this.props.dispatch({
         type:"USERLIST",
-        payload:userList
+        payload:{
+          userList
+        }
       })
       
     })
@@ -182,10 +196,31 @@ class App extends Component {
       console.log('正在输入的用户'+userList);
       this.props.dispatch({
         type:"USERLIST",
-        payload:userList
+        payload:{
+          userList
+        }
       })
     })
 
+  }
+  //处理接受的新消息
+  getMessage= async (data)=>{
+    const {avatar1,datetime,username,value} = data;
+    await this.setState({
+      submitting: false,
+      comments: [
+        ...this.state.comments,
+        {
+            username:username,
+            avatar: avatar1,
+            content: <div className="item-message"><span>{value}</span></div>,
+            datetime: username+' '+datetime,
+        },
+      ],
+    });
+    console.log(this.scrollBox);
+    console.log(this.scrollBox.children[0]);
+    // .children[0].offsetHeight,'盒子高度'
   }
   componentWillUnmount(){
     this.state.socket.close()
@@ -193,13 +228,14 @@ class App extends Component {
   render() {
 
     const {userInfo:{username,avatar1},currentAlive,userInputtingList,userList} = this.props;
+
     const { comments, submitting, value } = this.state;
     return (
         <div className="home-container">
             <div className="home-header">
                <MyHeader username={username} currentAlive={currentAlive} userList={userList} userInputtingList={userInputtingList}></MyHeader>
             </div>
-            <div className="home-main" onScroll={this.homeScroll}>
+            <div className="home-main" ref={(refs)=>{this.scrollBox=refs}} onScroll={this.homeScroll}>
             {/* {comments.length > 0 && <CommentList comments={comments} />} */}
               <CommentList comments={comments.length?comments:[]}></CommentList>
             </div>
@@ -212,6 +248,14 @@ class App extends Component {
                         />
                     }
                     content={
+                        // <Editor
+                        //   onChange={this.handleChange}
+                        //   onSubmit={this.handleSubmit}
+                        //   submitting={submitting}
+                        //   defaultValue={value}
+                        //   onBlur={this.handleBlur}
+                        //   onFocus={this.handleFocus}
+                        // />
                         <Editor
                           onChange={this.handleChange}
                           onSubmit={this.handleSubmit}

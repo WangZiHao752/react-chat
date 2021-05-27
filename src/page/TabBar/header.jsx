@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { Drawer, Button ,Col,Row,Avatar} from 'antd';
+import { Drawer, Button ,Col,Row,Avatar,Steps} from 'antd';
+
+import {
+  MenuFoldOutlined,
+  UserOutlined 
+} from '@ant-design/icons';
 const MyHeader = (props)=>{
-    const {username,currentAlive,userInputtingList,userList} = props;
+    const {Step} = Steps;
+    const {username,userInputtingList,userList=[]} = props;
     const [visible, setVisible] = useState(false);
     const content = (
         <div>
@@ -25,27 +31,33 @@ const MyHeader = (props)=>{
         setVisible(false);
     };
     return<>
-        <div>用户名: <b>{username}</b></div>
-            <Button type="primary" type="dashed" >正在输入</Button>
-            <Button type="primary" type="dashed" onClick={showDrawer}>在线人数:{currentAlive}</Button>
+        {/* <div>用户名: <b>{username}</b></div> */}
+        <Step status="finish" title={username} icon={<UserOutlined />} />
+        <div className="chat-title">
+          <div><b>卖猪狗大队</b></div>
+          <div className="chat-title-clo2">{userList.length}人在线</div>
+        </div>
+        <Button type="text" onClick={showDrawer}><MenuFoldOutlined className="show-more" /></Button>
         <Drawer
-            title="Basic Drawer"
+            title="在线用户"
             placement="right"
             closable={false}
             onClose={onClose}
             visible={visible}
         >
             <Row>
-            <Col span={12}>
+            <Col span={24}>
               {
-                userList.map(item=><p>
+               userList?userList.map(item=><p className="alive-item">
                     <Avatar
                           src='https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png'
                           alt="Han Solo"
                         />
-                    {item.username}
-                    {item.isInputting?'输入中···':''}
-                </p>)
+                    <div>
+                      <b>{item.username}</b>
+                      <span>{item.isInputting?'输入中···':''}</span>
+                    </div>
+                </p>):null
               }
             </Col>
           </Row>
